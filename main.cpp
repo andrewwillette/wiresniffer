@@ -2,7 +2,6 @@
 #include <imtui/imtui.h>
 #include <imtui/imtui-impl-ncurses.h>
 #include <imgui/imgui.h>
-// #include <imtui/imtui-demo.h>
 
 int main() {
 
@@ -12,7 +11,6 @@ int main() {
     auto screen = ImTui_ImplNcurses_Init(true);
     ImTui_ImplText_Init();
 
-    bool demo = true;
     int nframes = 0;
     float fval = 1.23f;
 
@@ -33,7 +31,6 @@ int main() {
         ImGui::SliderFloat("##float", &fval, 0.0f, 10.0f);
         ImGui::End();
 
-        // ImTui::ShowDemoWindow(&demo);
 
         ImGui::Render();
 
