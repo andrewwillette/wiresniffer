@@ -9,29 +9,28 @@
 using namespace Tins;
 using namespace std;
 
-class WireSnifferRow {
-
+struct WireSnifferRow {
     string sourceAddress, destinationAddress;
-
-    public:
-    WireSnifferRow(string sourceAddress, string destinationAddress) {
-        sourceAddress = sourceAddress;
-        destinationAddress = destinationAddress;
-    }
 };
 
-std::vector<Packet> globalPackets;
+std::vector<WireSnifferRow> snifferRows;
 
 class PacketReader {
     public:
     static void readPackets() {
         SnifferConfiguration config;
         config.set_promisc_mode(true);
-        config.set_filter("ip src 192.168.1.2");
+        config.set_filter("ip src 192.168.1.4");
         Sniffer sniffer("en0", config);
         
         while (true) {
-            globalPackets.push_back(sniffer.next_packet());
+            auto packet = sniffer.next_packet();
+            auto destinationAddress = packet.pdu()->rfind_pdu<IP>().dst_addr().to_string();
+            auto sourceAddress = packet.pdu()->rfind_pdu<IP>().src_addr().to_string();
+            WireSnifferRow row;
+            row.destinationAddress = destinationAddress;
+            row.sourceAddress = sourceAddress;
+            snifferRows.push_back(row);
         }
     }
 
@@ -69,10 +68,12 @@ class FrontEnd {
             ImGui::SetNextWindowSize(ImVec2(WIDTH, HEIGHT), ImGuiCond_Once);
             bool x_visible = false;
             ImGui::Begin("Wiresniffer", &x_visible, ImGuiWindowFlags_NoCollapse);
-            for(Packet packet : globalPackets){
-                auto destinationAddresses = packet.pdu()->rfind_pdu<IP>().dst_addr().to_string();
-                createRow(destinationAddresses);
+            ImGui::BeginTable("Wiresniffer", 2);
+            createHeaders();
+            for(WireSnifferRow row : snifferRows){
+                createRow(row);
             }
+            ImGui::EndTable();
             ImGui::End();
             ImGui::Render();
             ImTui_ImplText_RenderDrawData(ImGui::GetDrawData(), screen);
@@ -87,10 +88,23 @@ class FrontEnd {
     }
 
     public:
-    void createRow(std::string& valueOne) {
-        ImGui::Text("destinationAddress");
-        ImGui::SameLine();
-        ImGui::Text(valueOne.c_str());
+    void createHeaders() {
+        ImGui::TableNextRow();
+        // ImGui::TableHeadersRow();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TableHeader("Source Address");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TableHeader("Destination Address");
+    }
+
+    public:
+    void createRow(WireSnifferRow wireSnifferRow) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text(wireSnifferRow.sourceAddress.c_str());
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text(wireSnifferRow.destinationAddress.c_str());
     }
 };
 
